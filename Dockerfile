@@ -8,7 +8,7 @@ RUN apk add --no-cache gcompat
 # Copy frontend code
 COPY apps/web/package*.json ./
 # Copy production environment variables for build
-COPY apps/web/.env .env
+COPY apps/web/.env.container .env
 # Copy TypeScript configs
 COPY apps/web/tsconfig.json apps/web/tsconfig.app.json apps/web/tsconfig.node.json ./
 # Copy Vite config, HTML entrypoint, and source

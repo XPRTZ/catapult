@@ -1,19 +1,50 @@
-
 services:
-  catapult-app:
+  db:
+    container_name: db_catapult
+    restart: unless-stopped
+    env_file:
+      - path: apps/db/.env
+        required: true
+    image: postgres:16
+    healthcheck:
+      test: [ 'CMD-SHELL', 'pg_isready -U ${POSTGRES_USER}' ]
+    volumes:
+      - data:/var/lib/postgresql/data/
+    ports:
+      - '5432:5432'
+
+  init:
+    container_name: db_catapult_init
+    build:
+      dockerfile: apps/init/Dockerfile
+      context: .
+    env_file:
+      - path: apps/init/.env
+        required: true
+    environment:
+      SERVER: db
+    depends_on:
+      db:
+        condition: service_healthy
+
+  app:
+    container_name: app_catapult
     image: catapult-app:latest
     build:
-      context: .
       dockerfile: Dockerfile
+      context: .
     ports:
-      - "3000:80"
+      - '3000:80'
     env_file:
-      - apps/api/.env
+      - path: apps/api/.env
+        required: true
     environment:
-      - NODE_ENV=production
-      - SERVER=host.docker.internal
-    networks:
-      - catapult-network
-networks:
-  catapult-network:
-    driver: bridge
+       VITE_AZURE_AD_REDIRECT_URI: ${VITE_AZURE_AD_REDIRECT_URI}
+       NODE_ENV: ${NODE_ENV}
+       SERVER: db
+    depends_on:
+      init:
+        condition: service_completed_successfully
+
+volumes:
+  data:
